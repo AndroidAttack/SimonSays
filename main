@@ -1,0 +1,227 @@
+//Project: Simple Simon assignment for RBT173
+//Andromeda M. de Anda 12/13/2021 
+
+//set the pins where the buttons, LEDs connect
+int button[] = {2, 4, 6, 8};  
+int led[] = {3, 5, 7, 9};     
+//number of rounds the player has to play before they win the game (the array can only hold up to 5 rounds)
+int roundsToWin = 5;
+//make an array of numbers that will be the sequence that the player needs to remember         
+int buttonSequence[16];
+//a variable to remember which button is being pressed. 4 is the value if no button is being pressed.       
+int pressedButton = 4;
+//keeps track of what round the player is on        
+int roundCounter = 1;
+//timer variable for time limit on button press         
+long startTime = 0;
+//time limit to hit a button          
+long timeLimit = 2000;
+//variable to start as false as the outcome unless otherwise       
+boolean gameStarted = false;     
+
+void setup() {
+
+  //set all of the button pins to input_pullup 
+  pinMode(button[0], INPUT_PULLUP);
+  pinMode(button[1], INPUT_PULLUP);
+  pinMode(button[2], INPUT_PULLUP);
+  pinMode(button[3], INPUT_PULLUP);
+
+  //set all of the LED pins to output
+  pinMode(led[0], OUTPUT);
+  pinMode(led[1], OUTPUT);
+  pinMode(led[2], OUTPUT);
+  pinMode(led[3], OUTPUT);
+}
+
+
+void loop() {
+//if the game hasn't started yet then these are the terms
+//We set the start sequence to zero so then start the game to go to other functions
+  if (gameStarted == false) {   
+    startSequence();            
+    roundCounter = 0;           
+    delay(1500);                
+    gameStarted = true;         
+  }
+
+  //each round, start by flashing out the sequence to be repeated
+  //go thought the array up to the current round number
+  for (int i = 0; i <= roundCounter; i++) { 
+    flashLED(buttonSequence[i]);          
+    delay(200);                           
+    allLEDoff();                          
+    delay(200);
+  }
+
+
+
+  //then start going through the sequence one at a time and see if the user presses the correct button
+  //for each button to be pressed in the sequence
+  for (int i = 0; i <= roundCounter; i++) { 
+    //record the start time
+    startTime = millis();                 
+    //While the game is in start mode; loop until the player presses a button or the time limit is up (the time limit check is in an if statement)
+    while (gameStarted == true) { 
+
+      pressedButton = buttonCheck();      
+
+      if (pressedButton < 4) {            
+
+        flashLED(pressedButton);          
+        //if the button matches the button in the sequence
+        if (pressedButton == buttonSequence[i]) { 
+          delay(250);                   
+          allLEDoff();                  
+          break;                        
+        //if the button pressed is wrong
+        } else {
+          //go to losesequence function                          
+          loseSequence();               
+          break;                        
+        }
+      //if no button is pressed
+      } else {                            
+        allLEDoff();                      
+      }
+
+      //check to see if the time limit is up
+      if (millis() - startTime > timeLimit) { //if the time limit is up
+        loseSequence();                       //play the lose sequence
+        break;                                //when the program gets back from the lose sequence, break the while loop so that the game can start over
+      }
+    }
+  }
+//if the game contiues then increase the round or, in other words, go to the next round
+  if (gameStarted == true) {
+    roundCounter = roundCounter + 1;      
+
+    if (roundCounter >= roundsToWin) {  
+      //call "win" function            
+      winSequence();                      
+    }
+
+    delay(500);                           
+  }
+
+}
+
+//function to help make the LED flash
+void flashLED (int ledNumber) {
+  digitalWrite(led[ledNumber], HIGH);
+}
+
+//fumction to turn them off
+void allLEDoff () {
+  //turn all the LEDs off
+  digitalWrite(led[0], LOW);
+  digitalWrite(led[1], LOW);
+  digitalWrite(led[2], LOW);
+  digitalWrite(led[3], LOW);
+}
+
+//To check which button is pressed and what value to return for buttonpressed
+int buttonCheck() {
+  //check if any buttons are being pressed
+  if (digitalRead(button[0]) == LOW) {
+    return 0;
+  } else if (digitalRead(button[1]) == LOW) {
+    return 1;
+  } else if (digitalRead(button[2]) == LOW) {
+    return 2;
+  } else if (digitalRead(button[3]) == LOW) {
+    return 3;
+  } else {
+    //this will be the value for no button being pressed
+    return 4; 
+  }
+}
+
+//START SEQUENCE
+void startSequence() {
+  //random number
+  randomSeed(analogRead(A0));   
+
+  //populate the buttonSequence array with random numbers from 0 to 3
+  for (int i = 0; i <= roundsToWin; i++) {
+    buttonSequence[i] = round(random(0, 4));
+  }
+
+  //flash all of the LEDs when the game starts
+  for (int i = 0; i <= 3; i++) {
+
+
+    //turn all of the leds on
+    digitalWrite(led[0], HIGH);
+    digitalWrite(led[1], HIGH);
+    digitalWrite(led[2], HIGH);
+    digitalWrite(led[3], HIGH);
+
+    delay(100);         //wait for a moment
+
+    //turn all of the leds off
+    digitalWrite(led[0], LOW);
+    digitalWrite(led[1], LOW);
+    digitalWrite(led[2], LOW);
+    digitalWrite(led[3], LOW);
+
+    delay(100);   //wait for a moment
+
+  } //this will repeat 4 times
+}
+
+
+//WIN SEQUENCE
+void winSequence() {
+
+  //turn all the LEDs on
+  for (int j = 0; j <= 3; j++) {
+    //turn all of the leds on
+    digitalWrite(led[0], HIGH);
+    digitalWrite(led[1], HIGH);
+    digitalWrite(led[2], HIGH);
+    digitalWrite(led[3], HIGH);
+
+    delay(100);         //wait for a moment
+
+    //turn all of the leds off
+    digitalWrite(led[0], LOW);
+    digitalWrite(led[1], LOW);
+    digitalWrite(led[2], LOW);
+    digitalWrite(led[3], LOW);
+
+    delay(100);   //wait for a moment
+
+  }
+
+ 
+  //wait until a button is pressed
+  do {
+    pressedButton = buttonCheck();
+  } while (pressedButton > 3);
+  delay(100);
+  //reset the game so that the start sequence will play again.
+  gameStarted = false;   
+
+}
+
+
+//LOSE SEQUENCE
+void loseSequence() {
+
+  //turn all the LEDs on
+  for (int j = 0; j <= 3; j++) {
+    digitalWrite(led[j], HIGH);
+    delay(1000);
+    digitalWrite(led[j], LOW);
+
+  }
+
+  //wait until a button is pressed
+  do {
+    pressedButton = buttonCheck();
+  } while (pressedButton > 3);
+  delay(200);
+  //reset the game so that the start sequence will play again.
+  gameStarted = false;   
+}
